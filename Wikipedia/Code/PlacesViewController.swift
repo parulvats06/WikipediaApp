@@ -2397,6 +2397,17 @@ extension PlacesViewController: MKMapViewDelegate {
                 let placeView = mapView.dequeueReusableAnnotationView(withIdentifier: userViewReuseIdentifier) as? UserLocationAnnotationView ?? UserLocationAnnotationView(annotation: userLocation, reuseIdentifier: userViewReuseIdentifier)
                 placeView.annotation = userLocation
                 return placeView
+            } else if annotation is MKPointAnnotation { 
+                let identifier = "Annotation"
+                var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
+                
+                if annotationView == nil {
+                    annotationView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+                    annotationView?.canShowCallout = true
+                } else {
+                    annotationView?.annotation = annotation
+                }
+                return annotationView
             }
             return nil
         }
@@ -2447,3 +2458,21 @@ extension PlacesViewController {
         }
     }
 }
+
+//Mark: - extension PlacesViewController for adding annotation from test app
+//Add annotation on location received from Test App
+extension PlacesViewController {
+    @objc public func showSelectedTestLocation(mapItem: MKMapItem, title: String) {
+        guard let lat = mapItem.placemark.location?.coordinate.latitude, let long = mapItem.placemark.location?.coordinate.longitude else {
+            return
+        }
+        let annotation = MKPointAnnotation()
+        annotation.title = title
+        annotation.coordinate = CLLocationCoordinate2D(latitude: lat, longitude: long)
+        mapView.addAnnotation(annotation)
+        //ZoomMapOnSelectedLocation
+        let location = CLLocation(latitude: lat, longitude: long)
+        zoomAndPanMapView(toLocation: location)
+    }
+}
+

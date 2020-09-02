@@ -1,5 +1,6 @@
 #import <WMF/NSUserActivity+WMFExtensions.h>
 #import <WMF/WMF-Swift.h>
+#import <MapKit/MapKit.h>
 
 @import CoreSpotlight;
 @import MobileCoreServices;
@@ -62,18 +63,44 @@ __attribute__((annotate("returns_localized_nsstring"))) static inline NSString *
 + (instancetype)wmf_placesActivityWithURL:(NSURL *)activityURL {
     NSURLComponents *components = [NSURLComponents componentsWithURL:activityURL resolvingAgainstBaseURL:NO];
     NSURL *articleURL = nil;
+    // adding functionality to parse latitude nad longitude
+    NSString *latitudeString = nil;
+    NSString *longitudeString = nil;
+    NSUserActivity *activity = [self wmf_pageActivityWithName:@"Places"];
+
     for (NSURLQueryItem *item in components.queryItems) {
         if ([item.name isEqualToString:@"WMFArticleURL"]) {
             NSString *articleURLString = item.value;
             articleURL = [NSURL URLWithString:articleURLString];
             break;
         }
+
+        if ([item.name isEqualToString:@"title"]) {
+            activity.title = item.value;
+        }
+
+        if ([item.name isEqualToString:@"latitude"]) {
+            latitudeString = item.value;
+        }
+
+        if ([item.name isEqualToString:@"longitude"]) {
+            longitudeString = item.value;
+        }
     }
-    NSUserActivity *activity = [self wmf_pageActivityWithName:@"Places"];
+
+    if (latitudeString != nil && longitudeString != nil) {
+        double latitude = [latitudeString doubleValue];
+        double longitude = [longitudeString doubleValue];
+        CLLocationCoordinate2D coords = CLLocationCoordinate2DMake(latitude, longitude);
+        MKPlacemark *placemark = [[MKPlacemark alloc] initWithCoordinate:coords];
+        MKMapItem *mapItem = [[MKMapItem alloc] initWithPlacemark:placemark];
+        [mapItem setName:@"Name of your location"];
+        activity.mapItem = mapItem;
+    }
+
     activity.webpageURL = articleURL;
     return activity;
 }
-
 + (instancetype)wmf_exploreViewActivity {
     NSUserActivity *activity = [self wmf_pageActivityWithName:@"Explore"];
     return activity;
